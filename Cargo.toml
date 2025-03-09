@@ -13,11 +13,17 @@ strip = true         # Strip symbols from binary
 [dependencies]
 # For hardware information
 sysinfo = "0.29.0"
-wmi = "0.11.0"  # Windows Management Instrumentation for Windows systems
-uname = "0.1.1"  # For Unix-like systems
+wmi = { version = "0.11.0", optional = true }  # Optional for Windows only
+uname = { version = "0.1.1", optional = true }  # Optional for Unix systems only
 
 # For the UI
 eframe = "0.22.0"  # egui framework
 egui = "0.22.0"
 sha2 = "0.10.6"  # For hashing the hardware ID
 hex = "0.4.3"    # For converting hash to hex string
+
+[target.'cfg(target_os = "windows")'.dependencies]
+wmi = "0.11.0"   # Windows Management Instrumentation for Windows
+
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+uname = "0.1.1"  # For Unix-like systems

@@ -1,7 +1,11 @@
+#[cfg(not(target_os = "windows"))]
 use std::error::Error;
+#[cfg(not(target_os = "windows"))]
 use std::fs;
+#[cfg(not(target_os = "windows"))]
 use std::process::Command;
 
+#[cfg(not(target_os = "windows"))]
 pub fn get_motherboard_info() -> Result<String, Box<dyn Error>> {
     let mut unique_id = String::new();
     
