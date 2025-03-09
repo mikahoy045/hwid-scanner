@@ -3,6 +3,13 @@ name = "hwid_app"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+opt-level = "z"      # Optimize for size
+lto = true           # Enable Link Time Optimization
+codegen-units = 1    # Reduce parallel code generation units for better optimization
+panic = "abort"      # Abort on panic
+strip = true         # Strip symbols from binary
+
 [dependencies]
 # For hardware information
 sysinfo = "0.29.0"

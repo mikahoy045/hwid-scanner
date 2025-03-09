@@ -1,4 +1,4 @@
-use eframe::{egui, App};
+use eframe::egui;
 use sha2::{Digest, Sha256};
 use std::error::Error;
 
@@ -14,8 +14,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Default::default()
     };
     
-    eframe::run_native(
-        "Hardware ID App",
+    let _ = eframe::run_native(
+        "Speramus HWID",
         options,
         Box::new(|_cc| Box::new(HWIDApp::new())),
     );
