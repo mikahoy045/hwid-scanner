@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*' # Run when tag matches v*, like v1.0, v0.1.0, etc.
 
+# Add this permissions block
+permissions:
+  contents: write  # This is required for creating releases
+
 jobs:
   build:
     name: Build for ${{ matrix.os }}
@@ -67,6 +71,9 @@ jobs:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
+    # You can also add permissions at the job level if needed
+    permissions:
+      contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
