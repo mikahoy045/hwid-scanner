@@ -29,7 +29,7 @@ pub fn get_motherboard_info() -> Result<String, Box<dyn Error>> {
             &password,
             0,
             &locale,
-            &authority,
+            None,
         )?
     };
 
