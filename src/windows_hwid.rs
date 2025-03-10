@@ -1,64 +1,119 @@
 use std::error::Error;
-use wmi::{COMLibrary, Variant, WMIConnection};
+use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED};
+use windows::Win32::System::Wmi::{IWbemLocator, WbemLocator};
+use windows::core::PCWSTR;
 
 pub fn get_motherboard_info() -> Result<String, Box<dyn Error>> {
-    // Initialize COM library
-    let com_con = COMLibrary::new()?;
-    
+    // Initialize COM
+    unsafe {
+        CoInitializeEx(None, COINIT_MULTITHREADED)?;
+    }
+
+    // Create WbemLocator instance
+    let locator: IWbemLocator = unsafe {
+        CoCreateInstance(&WbemLocator, None, CLSCTX_INPROC_SERVER)?
+    };
+
     // Connect to WMI
-    let wmi_con = WMIConnection::new(com_con)?;
-    
-    // Query for motherboard (baseboard) information
-    let baseboard: Vec<std::collections::HashMap<String, Variant>> = wmi_con.raw_query(
-        "SELECT Manufacturer, Product, SerialNumber FROM Win32_BaseBoard"
-    )?;
-    
-    // Query for BIOS information for additional uniqueness
-    let bios: Vec<std::collections::HashMap<String, Variant>> = wmi_con.raw_query(
-        "SELECT Manufacturer, SerialNumber, Version FROM Win32_BIOS"
-    )?;
-    
-    // Query for processor ID which can be useful for uniqueness
-    let processor: Vec<std::collections::HashMap<String, Variant>> = wmi_con.raw_query(
-        "SELECT ProcessorId FROM Win32_Processor"
-    )?;
-    
-    // Combine all information to create a unique identifier
-    let mut unique_id = String::new();
-    
-    // Extract motherboard information
-    if let Some(board) = baseboard.first() {
-        if let Some(Variant::String(manufacturer)) = board.get("Manufacturer") {
-            unique_id.push_str(manufacturer);
-        }
+    let namespace = windows::core::BSTR::from("ROOT\\CIMV2");
+    let server = windows::core::BSTR::from("");
+    let services = unsafe {
+        locator.ConnectServer(
+            &namespace,
+            &server,
+            PCWSTR::null(),
+            PCWSTR::null(),
+            None,
+            PCWSTR::null(),
+            None,
+        )?
+    };
+
+    // Execute query
+    let language = windows::core::BSTR::from("WQL");
+    let query = windows::core::BSTR::from("SELECT SerialNumber FROM Win32_BaseBoard");
+    let enumerator = unsafe {
+        services.ExecQuery(
+            &language,
+            &query,
+            None,
+            None,
+        )?
+    };
+
+    // Fetch results
+    let mut mb_serial = String::new();
+
+    loop {
+        let mut item = None;
+        let mut returned = 0;
         
-        if let Some(Variant::String(product)) = board.get("Product") {
-            unique_id.push_str(product);
+        let result = unsafe { 
+            enumerator.Next(
+                windows::Win32::Foundation::INFINITE,
+                std::mem::transmute(&mut item), 
+                &mut returned,
+            )
+        };
+
+        if !result.is_ok() || returned == 0 {
+            break;
         }
-        
-        if let Some(Variant::String(serial)) = board.get("SerialNumber") {
-            unique_id.push_str(serial);
-        }
-    }
-    
-    // Extract BIOS information
-    if let Some(bios_info) = bios.first() {
-        if let Some(Variant::String(serial)) = bios_info.get("SerialNumber") {
-            unique_id.push_str(serial);
-        }
-    }
-    
-    // Extract processor information as a backup uniqueness factor
-    if let Some(proc_info) = processor.first() {
-        if let Some(Variant::String(proc_id)) = proc_info.get("ProcessorId") {
-            unique_id.push_str(proc_id);
+
+        if let Some(object) = item {
+            let variant = unsafe { object.Get(windows::core::PCWSTR::from_raw(windows::core::w!("SerialNumber").as_ptr()))? };
+            if let Some(serial) = variant.to_string() {
+                mb_serial = serial;
+                break;
+            }
         }
     }
-    
-    // Make sure the ID isn't empty
-    if unique_id.is_empty() {
-        return Err("Failed to retrieve any hardware identification".into());
+
+    // Fallback to other identifiers if serial number is empty
+    if mb_serial.trim().is_empty() {
+        // Try to get the motherboard manufacturer + product instead
+        let query = windows::core::BSTR::from("SELECT Manufacturer, Product FROM Win32_BaseBoard");
+        let enumerator = unsafe {
+            services.ExecQuery(
+                &language,
+                &query,
+                None,
+                None,
+            )?
+        };
+
+        loop {
+            let mut item = None;
+            let mut returned = 0;
+            
+            let result = unsafe { 
+                enumerator.Next(
+                    windows::Win32::Foundation::INFINITE,
+                    std::mem::transmute(&mut item), 
+                    &mut returned,
+                )
+            };
+
+            if !result.is_ok() || returned == 0 {
+                break;
+            }
+
+            if let Some(object) = item {
+                let mfr_variant = unsafe { object.Get(windows::core::PCWSTR::from_raw(windows::core::w!("Manufacturer").as_ptr()))? };
+                let prod_variant = unsafe { object.Get(windows::core::PCWSTR::from_raw(windows::core::w!("Product").as_ptr()))? };
+                
+                let manufacturer = mfr_variant.to_string().unwrap_or_default();
+                let product = prod_variant.to_string().unwrap_or_default();
+                
+                mb_serial = format!("{}_{}", manufacturer, product);
+                break;
+            }
+        }
     }
-    
-    Ok(unique_id)
+
+    if mb_serial.trim().is_empty() {
+        return Err("Could not retrieve motherboard information".into());
+    }
+
+    Ok(mb_serial)
 } 

@@ -1360,6 +1360,7 @@ dependencies = [
  "sha2",
  "sysinfo",
  "uname",
+ "windows",
  "wmi",
 ]
 

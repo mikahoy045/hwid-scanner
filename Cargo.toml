@@ -22,6 +22,8 @@ egui = "0.22.0"
 sha2 = "0.10.6"  # For hashing the hardware ID
 hex = "0.4.3"    # For converting hash to hex string
 
+windows = { version = "0.48", features = ["Win32_System_Com", "Win32_System_Wmi", "Win32_Foundation"] }
+
 [target.'cfg(target_os = "windows")'.dependencies]
 wmi = "0.11.0"   # Windows Management Instrumentation for Windows
 
