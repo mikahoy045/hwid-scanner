@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             artifact_name: hwid_app
             asset_name: hwid_app-linux
           - os: windows-latest
@@ -37,7 +37,7 @@ jobs:
       
       # Install Linux dependencies if needed
       - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libudev-dev
@@ -70,7 +70,7 @@ jobs:
   release:
     name: Create Release
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     # You can also add permissions at the job level if needed
     permissions:
       contents: write
