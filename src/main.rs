@@ -9,6 +9,15 @@ mod windows_hwid;
 mod unix_hwid;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    #[cfg(target_os = "linux")]
+    {
+        let args: Vec<String> = std::env::args().collect();
+        if args.iter().any(|arg| arg == "--headless") {
+            println!("{}", get_motherboard_hwid()?);
+            return Ok(());
+        }
+    }
+
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(400.0, 300.0)),
         ..Default::default()
