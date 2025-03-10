@@ -1,6 +1,6 @@
 use std::error::Error;
 use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED};
-use windows::Win32::System::Wmi::{IWbemLocator, WbemLocator, WBEM_FLAG_FORWARD_ONLY, WBEM_FLAG_RETURN_IMMEDIATELY};
+use windows::Win32::System::Wmi::{IWbemLocator, WbemLocator, WBEM_FLAG_FORWARD_ONLY, WBEM_FLAG_RETURN_IMMEDIATELY, IWbemClassObject};
 use windows::core::{BSTR, PCWSTR};
 
 pub fn get_motherboard_info() -> Result<String, Box<dyn Error>> {
@@ -50,7 +50,7 @@ pub fn get_motherboard_info() -> Result<String, Box<dyn Error>> {
     let mut mb_serial = String::new();
 
     loop {
-        let mut item = None;
+        let mut item: Option<IWbemClassObject> = None;
         let mut returned = 0;
         
         let result = unsafe { 
@@ -88,7 +88,7 @@ pub fn get_motherboard_info() -> Result<String, Box<dyn Error>> {
         };
 
         loop {
-            let mut item = None;
+            let mut item: Option<IWbemClassObject> = None;
             let mut returned = 0;
             
             let result = unsafe { 
