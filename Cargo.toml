@@ -15,6 +15,7 @@ strip = true         # Strip symbols from binary
 sysinfo = "0.29.0"
 wmi = { version = "0.11.0", optional = true }  # Optional for Windows only
 uname = { version = "0.1.1", optional = true }  # Optional for Unix systems only
+serde = { version = "1.0", features = ["derive"] }  # Added for WMI queries
 
 # For the UI
 eframe = "0.22.0"  # egui framework

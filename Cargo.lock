@@ -1357,6 +1357,7 @@ dependencies = [
  "eframe",
  "egui",
  "hex",
+ "serde",
  "sha2",
  "sysinfo",
  "uname",
